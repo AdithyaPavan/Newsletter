@@ -1,0 +1,3474 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Email Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+      :root[data-theme="dark"] {
+        --bg: #0f0f12;
+        --bg2: #17171b;
+        --bg3: #1e1e24;
+        --bg4: #26262e;
+        --bg5: #2e2e38;
+        --border: #2a2a35;
+        --border2: #38383f;
+        --text: #e4e4f0;
+        --text2: #8a8aa8;
+        --text3: #48485e;
+        --accent: #5b8dee;
+        --accent2: #7aa3f5;
+        --accent-bg: #5b8dee12;
+        --accent-border: #5b8dee38;
+        --red: #f06474;
+        --red-bg: #f0647412;
+        --green: #43d9ad;
+        --green-bg: #43d9ad12;
+        --purple: #b07ef8;
+        --shadow: #00000070;
+      }
+      :root[data-theme="light"] {
+        --bg: #f2f2f7;
+        --bg2: #ffffff;
+        --bg3: #f7f7fc;
+        --bg4: #ebebf4;
+        --bg5: #e2e2ec;
+        --border: #e0e0ec;
+        --border2: #cacada;
+        --text: #18182c;
+        --text2: #52526a;
+        --text3: #8e8ea8;
+        --accent: #3b6de0;
+        --accent2: #2d5bcc;
+        --accent-bg: #3b6de012;
+        --accent-border: #3b6de038;
+        --red: #d03040;
+        --red-bg: #d0304012;
+        --green: #1a9e78;
+        --green-bg: #1a9e7812;
+        --purple: #7c4ecf;
+        --shadow: #00000020;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          ui-monospace, "Cascadia Code", "Segoe UI Mono", Menlo, Monaco,
+          Consolas, monospace;
+        font-size: 12px;
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ═══ TOPBAR ═══ */
+      .topbar {
+        height: 42px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        gap: 5px;
+        flex-shrink: 0;
+        z-index: 10;
+      }
+      .topbar-logo {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--accent2);
+        letter-spacing: 0.06em;
+        margin-right: 4px;
+      }
+      .topbar-sep {
+        width: 1px;
+        height: 18px;
+        background: var(--border);
+        margin: 0 3px;
+      }
+      .topbar-spacer {
+        flex: 1;
+      }
+
+      /* ═══ LAYOUT ═══ */
+      .app {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+      }
+      .resizer {
+        flex: 0 0 4px;
+        width: 4px;
+        background: var(--border);
+        cursor: col-resize;
+        position: relative;
+        z-index: 20;
+        user-select: none;
+        transition: background 0.15s;
+      }
+      .resizer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -5px;
+        right: -5px;
+      }
+      .resizer:hover,
+      .resizer.active {
+        background: var(--accent);
+      }
+
+      /* ═══ ICON RAIL ═══ */
+      .icon-rail {
+        flex: 0 0 44px;
+        width: 44px;
+        background: var(--bg2);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 0;
+        gap: 4px;
+        z-index: 30;
+        flex-shrink: 0;
+      }
+      .rail-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 7px;
+        border: 1px solid transparent;
+        background: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        color: var(--text3);
+        transition: all 0.15s;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .rail-btn:hover {
+        background: var(--bg4);
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .rail-btn.active {
+        background: var(--accent-bg);
+        border-color: var(--accent-border);
+        color: var(--accent2);
+      }
+      .rail-btn .rail-tooltip {
+        position: absolute;
+        left: 46px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--bg4);
+        border: 1px solid var(--border2);
+        color: var(--text);
+        font-size: 10px;
+        padding: 4px 8px;
+        border-radius: 5px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s;
+        z-index: 9999;
+      }
+      .rail-btn:hover .rail-tooltip {
+        opacity: 1;
+      }
+
+      /* ═══ SIDEBAR FLYOUT ═══ */
+      .sidebar-flyout {
+        position: absolute;
+        left: 44px;
+        top: 42px;
+        bottom: 0;
+        width: 260px;
+        background: var(--bg2);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 25;
+        transform: translateX(-100%);
+        opacity: 0;
+        transition:
+          transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.22s;
+        box-shadow: 4px 0 20px var(--shadow);
+      }
+      .sidebar-flyout.open {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      .flyout-header {
+        padding: 10px 12px 8px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .flyout-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text3);
+        flex: 1;
+      }
+      .flyout-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text3);
+        font-size: 13px;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: inherit;
+        transition: color 0.12s;
+      }
+      .flyout-close:hover {
+        color: var(--red);
+      }
+      .sidebar-section {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      .section-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text3);
+        margin-bottom: 7px;
+      }
+      .comp-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-height: 0;
+      }
+      .comp-scroll::-webkit-scrollbar {
+        width: 3px;
+      }
+      .comp-scroll::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 2px;
+      }
+
+      /* Image panel */
+      .img-panel {
+        flex: 0 0 auto;
+        border-top: 2px solid var(--border);
+        background: var(--bg3);
+      }
+      .img-panel-head {
+        padding: 7px 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .img-panel-head:hover {
+        background: var(--bg4);
+      }
+      .img-panel-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text3);
+        flex: 1;
+      }
+      .img-panel-count {
+        font-size: 9px;
+        color: var(--text3);
+      }
+      .img-chevron {
+        font-size: 10px;
+        color: var(--text3);
+        transition: transform 0.2s;
+      }
+      .img-panel.open .img-chevron {
+        transform: rotate(180deg);
+      }
+      .img-panel-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.25s ease;
+      }
+      .img-panel.open .img-panel-body {
+        max-height: 220px;
+      }
+      .img-dropzone {
+        margin: 7px 10px;
+        border: 2px dashed var(--border2);
+        border-radius: 6px;
+        padding: 10px 8px;
+        text-align: center;
+        font-size: 10px;
+        color: var(--text3);
+        cursor: pointer;
+        position: relative;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .img-dropzone:hover,
+      .img-dropzone.drag-over {
+        border-color: var(--accent);
+        background: var(--accent-bg);
+        color: var(--accent2);
+      }
+      .img-dropzone input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+      .img-thumbs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 0 10px 8px;
+        max-height: 130px;
+        overflow-y: auto;
+      }
+      .img-thumb {
+        width: 50px;
+        height: 50px;
+        border-radius: 5px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        cursor: pointer;
+        position: relative;
+        background: var(--bg4);
+        flex-shrink: 0;
+      }
+      .img-thumb:hover {
+        border-color: var(--accent);
+      }
+      .img-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .img-thumb-no-preview {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .img-thumb-del {
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        background: #000a;
+        border: none;
+        border-radius: 3px;
+        color: #fff;
+        font-size: 8px;
+        padding: 1px 3px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.12s;
+        font-family: inherit;
+        line-height: 1;
+      }
+      .img-thumb:hover .img-thumb-del {
+        opacity: 1;
+      }
+      .img-thumb-name {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #000b;
+        font-size: 7px;
+        color: #fff;
+        padding: 2px 3px;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* ═══ CANVAS ═══ */
+      .canvas-col {
+        flex: 1 1 0;
+        min-width: 200px;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .panel-header {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        background: var(--bg2);
+      }
+      .panel-title {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text3);
+        flex: 1;
+      }
+
+      /* ZOOM CONTROLS */
+      .zoom-controls {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .zoom-btn {
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        background: var(--bg3);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: var(--text2);
+        transition: all 0.12s;
+        font-family: inherit;
+      }
+      .zoom-btn:hover {
+        background: var(--bg4);
+        color: var(--text);
+      }
+      .zoom-label {
+        font-size: 10px;
+        color: var(--text3);
+        min-width: 36px;
+        text-align: center;
+      }
+
+      .canvas-viewport {
+        flex: 1;
+        overflow: auto;
+        position: relative;
+        background: var(--bg);
+      }
+      .canvas-viewport::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .canvas-viewport::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 3px;
+      }
+      .canvas-inner {
+        min-width: 100%;
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        transform-origin: top center;
+        transition: transform 0.1s;
+      }
+      .canvas-email-wrap {
+        width: 600px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      /* ═══ BUTTONS ═══ */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 9px;
+        font-family: inherit;
+        font-size: 11px;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg3);
+        color: var(--text2);
+        transition: all 0.12s;
+        white-space: nowrap;
+        user-select: none;
+      }
+      .btn:hover {
+        background: var(--bg4);
+        border-color: var(--border2);
+        color: var(--text);
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn[disabled] {
+        opacity: 0.35;
+        cursor: default;
+        pointer-events: none;
+      }
+      .btn-accent {
+        background: var(--accent-bg);
+        border-color: var(--accent-border);
+        color: var(--accent2);
+      }
+      .btn-accent:hover {
+        filter: brightness(1.12);
+      }
+      .btn-red {
+        background: var(--red-bg);
+        border-color: color-mix(in srgb, var(--red) 35%, transparent);
+        color: var(--red);
+      }
+      .btn-red:hover {
+        filter: brightness(1.1);
+      }
+      .btn-green {
+        background: var(--green-bg);
+        border-color: color-mix(in srgb, var(--green) 35%, transparent);
+        color: var(--green);
+      }
+      .btn-green:hover {
+        filter: brightness(1.1);
+      }
+      .btn-purple {
+        background: color-mix(in srgb, var(--purple) 10%, transparent);
+        border-color: color-mix(in srgb, var(--purple) 40%, transparent);
+        color: var(--purple);
+      }
+      .btn-purple:hover {
+        filter: brightness(1.1);
+      }
+      .btn-sm {
+        padding: 3px 7px;
+        font-size: 10px;
+      }
+      .btn-full {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* ═══ FORMS ═══ */
+      .field-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text3);
+        margin-bottom: 4px;
+      }
+      input[type="text"],
+      textarea,
+      input[type="number"] {
+        width: 100%;
+        font-family: inherit;
+        font-size: 11px;
+        background: var(--bg3);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 6px 8px;
+        outline: none;
+        transition:
+          border-color 0.12s,
+          background 0.2s;
+      }
+      input[type="text"]:focus,
+      textarea:focus,
+      input[type="number"]:focus {
+        border-color: var(--accent);
+      }
+      input[type="text"]::placeholder,
+      textarea::placeholder {
+        color: var(--text3);
+      }
+      textarea {
+        resize: vertical;
+        height: 64px;
+        line-height: 1.5;
+      }
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 8px 0;
+      }
+      .row-btns {
+        display: flex;
+        gap: 5px;
+      }
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        font-family: inherit;
+        font-size: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--bg3);
+        color: var(--text2);
+        transition: all 0.12s;
+        user-select: none;
+      }
+      .theme-toggle:hover {
+        background: var(--bg4);
+        color: var(--text);
+      }
+
+      /* ═══ COMP ITEMS ═══ */
+      .comp-item {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 5px 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: grab;
+        transition:
+          border-color 0.12s,
+          background 0.12s;
+      }
+      .comp-item:hover {
+        border-color: var(--accent-border);
+        background: var(--bg4);
+      }
+      .comp-item:active {
+        cursor: grabbing;
+      }
+      .comp-index {
+        font-size: 9px;
+        color: var(--text3);
+        background: var(--bg5);
+        border-radius: 3px;
+        padding: 1px 4px;
+        min-width: 18px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .comp-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+        color: var(--text);
+      }
+      .comp-del {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text3);
+        font-size: 11px;
+        padding: 1px 3px;
+        line-height: 1;
+        border-radius: 3px;
+        transition:
+          color 0.12s,
+          background 0.12s;
+        opacity: 0;
+        font-family: inherit;
+      }
+      .comp-item:hover .comp-del {
+        opacity: 1;
+      }
+      .comp-del:hover {
+        color: var(--red) !important;
+        background: var(--red-bg);
+        opacity: 1 !important;
+      }
+
+      /* ═══ HOVER POPUP ═══ */
+      .comp-preview-popup {
+        position: fixed;
+        z-index: 9999;
+        background: #fff;
+        border: 2px solid var(--accent-border);
+        border-radius: 8px;
+        box-shadow: 0 12px 40px var(--shadow);
+        overflow: hidden;
+        display: none;
+        width: 340px;
+      }
+      .comp-preview-popup-header {
+        background: var(--bg3);
+        border-bottom: 1px solid var(--border);
+        padding: 5px 10px;
+        font-size: 10px;
+        color: var(--text2);
+      }
+      .comp-preview-popup iframe {
+        width: 340px;
+        height: 260px;
+        border: none;
+        display: block;
+        background: white;
+      }
+
+      /* ═══ CANVAS ROWS ═══ */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--text3);
+        gap: 8px;
+        padding: 60px 40px;
+        text-align: center;
+      }
+      .empty-icon {
+        font-size: 32px;
+      }
+
+      .row-wrap {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: border-color 0.15s;
+        flex-shrink: 0;
+        width: 600px;
+        position: relative;
+      }
+      .row-wrap:hover {
+        border-color: var(--border2);
+      }
+      .row-wrap.drag-over-row {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-bg);
+      }
+      .row-wrap.row-dragging {
+        opacity: 0.25;
+      }
+      .row-head {
+        background: var(--bg3);
+        border-bottom: 1px solid var(--border);
+        padding: 4px 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .drag-handle {
+        color: var(--text3);
+        cursor: grab;
+        font-size: 12px;
+        padding: 0 2px;
+      }
+      .drag-handle:active {
+        cursor: grabbing;
+      }
+      .row-tag {
+        font-size: 10px;
+        color: var(--text3);
+        flex: 1;
+      }
+      .row-cells {
+        display: flex;
+      }
+
+      .cell {
+        flex: 1;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: var(--text3);
+        background: var(--bg2);
+        border-right: 1px solid var(--border);
+        padding: 0;
+        transition:
+          background 0.12s,
+          color 0.12s;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+      }
+      .cell:last-child {
+        border-right: none;
+      }
+      .cell.drop-hover {
+        background: var(--accent-bg);
+        color: var(--accent2);
+      }
+      .cell.cell-selected {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+      }
+
+      /* ═══ CELL PREVIEW ═══ */
+      .cell-preview-wrap {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        min-height: 60px;
+        display: flex;
+        flex-direction: column;
+      }
+      .cell-preview-iframe {
+        width: 100%;
+        flex: 1;
+        border: none;
+        display: block;
+        pointer-events: none;
+        min-height: 60px;
+      }
+      .cell-preview-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 6px;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.55) 0%,
+          transparent 60%
+        );
+        gap: 4px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      [data-theme="light"] .cell-preview-overlay {
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.38) 0%,
+          transparent 60%
+        );
+      }
+      .cell:hover .cell-preview-overlay {
+        opacity: 1;
+      }
+      .cell-comp-name {
+        font-size: 10px;
+        color: #fff;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+      }
+      .cell-preview-overlay .btn {
+        pointer-events: all;
+      }
+      .cell-drop-hint {
+        font-size: 10px;
+        color: var(--text3);
+      }
+
+      /* ═══ PADDING EDITOR ═══ */
+      .padding-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg4);
+        border-top: 1px solid var(--border);
+        padding: 6px 10px;
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        z-index: 10;
+      }
+      .padding-bar.show {
+        display: flex;
+      }
+      .padding-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .padding-label {
+        font-size: 9px;
+        color: var(--text3);
+        width: 38px;
+        flex-shrink: 0;
+      }
+      .padding-input {
+        width: 54px !important;
+        padding: 3px 6px !important;
+        font-size: 10px !important;
+        text-align: center;
+      }
+      .padding-px {
+        font-size: 9px;
+        color: var(--text3);
+      }
+      .padding-apply {
+        margin-left: auto;
+      }
+
+      /* ═══ PREVIEW PANEL (right) ═══ */
+      .preview-panel {
+        flex: 0 0 360px;
+        min-width: 200px;
+        max-width: 600px;
+        background: var(--bg2);
+        border-left: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .preview-panel-head {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        background: var(--bg3);
+      }
+      .preview-panel-title {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text3);
+        flex: 1;
+      }
+      .preview-panel-tabs {
+        display: flex;
+        gap: 3px;
+      }
+      .ppanel-tab {
+        padding: 3px 8px;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text3);
+        border: 1px solid transparent;
+        transition: all 0.12s;
+      }
+      .ppanel-tab:hover {
+        color: var(--text2);
+        background: var(--bg4);
+      }
+      .ppanel-tab.active {
+        background: var(--accent-bg);
+        border-color: var(--accent-border);
+        color: var(--accent2);
+      }
+      .preview-panel-body {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .preview-panel-body iframe {
+        flex: 1;
+        border: none;
+        background: white;
+        width: 100%;
+        display: block;
+      }
+      .preview-panel-body pre {
+        flex: 1;
+        overflow: auto;
+        padding: 12px;
+        font-family: inherit;
+        font-size: 10px;
+        line-height: 1.6;
+        color: #7ec787;
+        background: var(--bg);
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .preview-panel-body pre::-webkit-scrollbar {
+        width: 4px;
+      }
+      .preview-panel-body pre::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 2px;
+      }
+
+      /* ═══ PREVIEW MODAL (keep) ═══ */
+      .preview-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: #00000099;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        z-index: 9990;
+        backdrop-filter: blur(3px);
+        padding: 20px;
+        overflow-y: auto;
+      }
+      .preview-modal-overlay.show {
+        display: flex;
+      }
+      .preview-modal {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        width: min(660px, 96vw);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 24px 80px var(--shadow);
+        margin: auto;
+      }
+      .preview-modal-head {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        background: var(--bg3);
+      }
+      .preview-modal-title {
+        font-size: 12px;
+        font-weight: 600;
+        flex: 1;
+        color: var(--text);
+      }
+      .preview-modal-tabs {
+        display: flex;
+        gap: 4px;
+      }
+      .ptab {
+        padding: 4px 10px;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text3);
+        border: 1px solid transparent;
+        transition: all 0.12s;
+      }
+      .ptab:hover {
+        color: var(--text2);
+        background: var(--bg4);
+      }
+      .ptab.active {
+        background: var(--accent-bg);
+        border-color: var(--accent-border);
+        color: var(--accent2);
+      }
+      .preview-modal-body {
+        flex: 1;
+        overflow: hidden;
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+      }
+      .preview-modal-body iframe {
+        flex: 1;
+        border: none;
+        background: white;
+        min-height: 500px;
+        width: 100%;
+      }
+      .preview-modal-body pre {
+        flex: 1;
+        overflow: auto;
+        padding: 16px;
+        font-family: inherit;
+        font-size: 11px;
+        line-height: 1.6;
+        color: #7ec787;
+        background: var(--bg);
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+        min-height: 500px;
+      }
+      .preview-modal-foot {
+        padding: 10px 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+      }
+
+      /* ═══ IMAGE MANAGER MODAL ═══ */
+      .img-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: #00000099;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9995;
+        backdrop-filter: blur(3px);
+      }
+      .img-modal-overlay.show {
+        display: flex;
+      }
+      .img-modal {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        width: min(540px, 95vw);
+        max-height: 88vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .img-modal-head {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .img-modal-title {
+        font-size: 12px;
+        font-weight: 600;
+        flex: 1;
+      }
+      .img-modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .img-modal-body::-webkit-scrollbar {
+        width: 3px;
+      }
+      .img-modal-body::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 2px;
+      }
+      .img-big-drop {
+        border: 2px dashed var(--border2);
+        border-radius: 8px;
+        padding: 28px 20px;
+        text-align: center;
+        font-size: 11px;
+        color: var(--text3);
+        cursor: pointer;
+        position: relative;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .img-big-drop:hover,
+      .img-big-drop.drag-over {
+        border-color: var(--accent);
+        background: var(--accent-bg);
+        color: var(--accent2);
+      }
+      .img-big-drop input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+      .img-big-drop-icon {
+        font-size: 26px;
+        margin-bottom: 6px;
+      }
+      .img-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+        gap: 8px;
+      }
+      .img-card {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+        background: var(--bg3);
+        cursor: pointer;
+        transition:
+          border-color 0.12s,
+          box-shadow 0.12s;
+        position: relative;
+      }
+      .img-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-bg);
+      }
+      .img-card.selected {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent);
+      }
+      .img-card img {
+        width: 100%;
+        height: 66px;
+        object-fit: cover;
+        display: block;
+      }
+      .img-card-no-img {
+        width: 100%;
+        height: 66px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        background: var(--bg4);
+      }
+      .img-card-name {
+        font-size: 9px;
+        padding: 3px 5px;
+        color: var(--text2);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
+      }
+      .img-card-del {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: #000b;
+        border: none;
+        color: #fff;
+        font-size: 9px;
+        padding: 1px 4px;
+        border-radius: 3px;
+        cursor: pointer;
+        opacity: 0;
+        font-family: inherit;
+      }
+      .img-card:hover .img-card-del {
+        opacity: 1;
+      }
+      .img-card.selected::after {
+        content: "✓";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
+        border-radius: 3px;
+        padding: 1px 4px;
+      }
+      .img-tag-box {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .img-tag-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .img-tag-thumb {
+        width: 72px;
+        height: 56px;
+        border-radius: 5px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: var(--bg4);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .img-tag-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .img-tag-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .img-path {
+        font-size: 10px;
+        color: var(--accent2);
+        word-break: break-all;
+      }
+      .img-tag-input-row {
+        display: flex;
+        gap: 5px;
+      }
+      .img-tag-input-row input {
+        flex: 1;
+        font-size: 10px;
+      }
+      .img-modal-foot {
+        padding: 10px 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-shrink: 0;
+      }
+
+      /* ═══ GENERIC MODAL ═══ */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: #00000088;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9998;
+        backdrop-filter: blur(2px);
+      }
+      .modal-overlay.show {
+        display: flex;
+      }
+      .modal {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 340px;
+        width: 92%;
+      }
+      .modal-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .modal-body {
+        font-size: 11px;
+        color: var(--text2);
+        margin-bottom: 16px;
+        line-height: 1.6;
+      }
+      .modal-btns {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+
+      /* ═══ ZIP SAVE MODAL ═══ */
+      .zip-modal {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        width: min(400px, 95vw);
+        overflow: hidden;
+        box-shadow: 0 24px 80px var(--shadow);
+      }
+      .zip-modal-head {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg3);
+      }
+      .zip-modal-title {
+        font-size: 12px;
+        font-weight: 600;
+        flex: 1;
+      }
+      .zip-modal-body {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .zip-field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .zip-field-row {
+        display: flex;
+        gap: 6px;
+      }
+      .zip-field-row input {
+        flex: 1;
+      }
+      .zip-modal-foot {
+        padding: 10px 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .dir-preview {
+        font-size: 10px;
+        color: var(--accent2);
+        background: var(--accent-bg);
+        border: 1px solid var(--accent-border);
+        border-radius: 4px;
+        padding: 5px 8px;
+        word-break: break-all;
+        min-height: 28px;
+        display: flex;
+        align-items: center;
+      }
+      .dir-note {
+        font-size: 9px;
+        color: var(--text3);
+        line-height: 1.5;
+      }
+
+      /* ═══ FILENAME MODAL ═══ */
+      .filename-modal {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 320px;
+        width: 92%;
+      }
+      .filename-modal-input {
+        width: 100%;
+        margin: 10px 0 14px;
+        font-family: inherit;
+        font-size: 12px;
+        background: var(--bg3);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 7px 10px;
+        outline: none;
+      }
+      .filename-modal-input:focus {
+        border-color: var(--accent);
+      }
+
+      /* Cookie badge */
+      .cookie-badge {
+        font-size: 9px;
+        color: var(--green);
+        background: var(--green-bg);
+        border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+        border-radius: 4px;
+        padding: 2px 6px;
+        display: none;
+      }
+      .cookie-badge.on {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        background: var(--bg4);
+        border: 1px solid var(--border2);
+        color: var(--text);
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 11px;
+        opacity: 0;
+        transition: all 0.2s;
+        pointer-events: none;
+        z-index: 10001;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      .toast.ok {
+        border-color: var(--green);
+        color: var(--green);
+      }
+      .toast.err {
+        border-color: var(--red);
+        color: var(--red);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <span class="topbar-logo">✉ EMAIL BUILDER</span>
+      <div class="topbar-sep"></div>
+      <button class="btn btn-sm" onclick="saveJSON()">⬇ Save JSON</button>
+      <label class="btn btn-sm" style="cursor: pointer"
+        >⬆ Load JSON
+        <input
+          type="file"
+          id="loadJSONInput"
+          accept=".json"
+          onchange="loadJSON(event)"
+          style="display: none"
+        />
+      </label>
+      <div class="topbar-sep"></div>
+      <button class="btn btn-sm btn-green" onclick="openPreviewModal()">
+        👁 Preview
+      </button>
+      <button class="btn btn-sm btn-purple" onclick="openOutlookModal()">
+        ✉ Outlook
+      </button>
+      <div class="topbar-spacer"></div>
+      <span class="cookie-badge" id="cookieBadge">🍪 Restored</span>
+      <button class="btn btn-sm" id="undoBtn" onclick="undo()" title="Ctrl+Z">
+        ↩
+      </button>
+      <button class="btn btn-sm" id="redoBtn" onclick="redo()" title="Ctrl+Y">
+        ↪
+      </button>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        ☀ Light
+      </button>
+      <button
+        class="btn btn-sm"
+        onclick="showCookieManager()"
+        style="padding: 3px 6px"
+      >
+        🍪
+      </button>
+      <button class="btn btn-sm btn-red" onclick="confirmClear()">
+        ✕ Clear
+      </button>
+    </div>
+
+    <div class="app">
+      <!-- ICON RAIL -->
+      <div class="icon-rail" id="iconRail">
+        <button
+          class="rail-btn"
+          id="railComponents"
+          onclick="toggleFlyout('components')"
+          title="Components"
+        >
+          🧩<span class="rail-tooltip">Components</span>
+        </button>
+        <button
+          class="rail-btn"
+          id="railRows"
+          onclick="toggleFlyout('rows')"
+          title="Rows"
+        >
+          ⊞<span class="rail-tooltip">Layouts</span>
+        </button>
+        <button
+          class="rail-btn"
+          id="railImages"
+          onclick="toggleFlyout('images')"
+          title="Images"
+        >
+          🖼<span class="rail-tooltip">Images</span>
+        </button>
+        <button
+          class="rail-btn"
+          id="railAdd"
+          onclick="toggleFlyout('add')"
+          title="Add Component"
+        >
+          ＋<span class="rail-tooltip">New Component</span>
+        </button>
+      </div>
+
+      <!-- SIDEBAR FLYOUT -->
+      <div class="sidebar-flyout" id="sidebarFlyout">
+        <div class="flyout-header">
+          <span class="flyout-title" id="flyoutTitle">Library</span>
+          <button class="flyout-close" onclick="closeFlyout()">✕</button>
+        </div>
+
+        <!-- Panel: Components -->
+        <div
+          id="panelComponents"
+          style="
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+          "
+        >
+          <div class="comp-scroll" id="componentList"></div>
+        </div>
+
+        <!-- Panel: Add Row -->
+        <div id="panelRows" style="display: none; padding: 12px">
+          <div class="field-label" style="margin-bottom: 8px">
+            Add Row to Canvas
+          </div>
+          <div class="row-btns">
+            <button
+              class="btn btn-full"
+              onclick="
+                doAction(() => addRow('single'));
+                closeFlyout();
+              "
+              style="flex: 1"
+            >
+              ▣ 1 Col
+            </button>
+            <button
+              class="btn btn-full"
+              onclick="
+                doAction(() => addRow('double'));
+                closeFlyout();
+              "
+              style="flex: 1"
+            >
+              ⊞ 2 Cols
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel: Images -->
+        <div
+          id="panelImages"
+          style="
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+          "
+        >
+          <div
+            style="padding: 10px 12px; border-bottom: 1px solid var(--border)"
+          >
+            <div class="img-dropzone" id="sidebarDZ">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onchange="handleFileInput(event)"
+                onclick="event.stopPropagation()"
+              />
+              Drop images here ·
+              <span
+                style="color: var(--accent2); cursor: pointer"
+                onclick="
+                  event.stopPropagation();
+                  openImgModal();
+                "
+                >manage →</span
+              >
+            </div>
+          </div>
+          <div
+            class="img-thumbs"
+            id="imgThumbs"
+            style="
+              flex: 1;
+              max-height: none;
+              padding: 10px 12px;
+              overflow-y: auto;
+            "
+          ></div>
+        </div>
+
+        <!-- Panel: Add Component -->
+        <div
+          id="panelAdd"
+          style="
+            display: none;
+            padding: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+          "
+        >
+          <div class="field-label">Component Name</div>
+          <input
+            type="text"
+            id="compNameInput"
+            placeholder="Component name..."
+          />
+          <div class="field-label">HTML</div>
+          <textarea
+            id="componentInput"
+            placeholder="Paste HTML here..."
+            style="height: 120px"
+          ></textarea>
+          <button class="btn btn-accent btn-full" onclick="addComponent()">
+            + Add Component
+          </button>
+        </div>
+      </div>
+
+      <!-- CANVAS -->
+      <div class="canvas-col" id="canvasCol">
+        <div class="panel-header">
+          <span class="panel-title">Canvas</span>
+          <span
+            id="rowCount"
+            style="font-size: 9px; color: var(--text3)"
+          ></span>
+          <div class="zoom-controls">
+            <button
+              class="zoom-btn"
+              onclick="setZoom(canvasZoom - 0.1)"
+              title="Zoom out"
+            >
+              −
+            </button>
+            <span class="zoom-label" id="zoomLabel">100%</span>
+            <button
+              class="zoom-btn"
+              onclick="setZoom(canvasZoom + 0.1)"
+              title="Zoom in"
+            >
+              +
+            </button>
+            <button
+              class="zoom-btn"
+              onclick="setZoom(1)"
+              title="Reset zoom"
+              style="font-size: 10px; width: auto; padding: 0 5px"
+            >
+              ⌂
+            </button>
+          </div>
+          <button
+            class="btn btn-sm"
+            onclick="togglePreviewPanel()"
+            id="previewPanelToggleBtn"
+            title="Toggle live preview panel"
+          >
+            👁 Panel
+          </button>
+        </div>
+        <div class="canvas-viewport" id="canvasViewport">
+          <div class="canvas-inner" id="canvasInner">
+            <div class="canvas-email-wrap" id="canvas"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="resizer" id="r2"></div>
+
+      <!-- LIVE PREVIEW PANEL -->
+      <div class="preview-panel" id="previewPanel">
+        <div class="preview-panel-head">
+          <span class="preview-panel-title">Live Preview</span>
+          <div class="preview-panel-tabs">
+            <div
+              class="ppanel-tab active"
+              onclick="switchPanelTab('visual', this)"
+            >
+              Visual
+            </div>
+            <div class="ppanel-tab" onclick="switchPanelTab('html', this)">
+              HTML
+            </div>
+          </div>
+          <button
+            class="btn btn-sm"
+            style="margin-left: 4px; padding: 2px 5px; font-size: 9px"
+            onclick="togglePreviewPanel()"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="preview-panel-body" id="previewPanelBody">
+          <iframe id="previewPanelFrame" style="display: block"></iframe>
+          <pre id="previewPanelCode" style="display: none"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- CELL PADDING EDITOR (floating) -->
+    <div
+      id="paddingEditor"
+      style="
+        position: fixed;
+        z-index: 5000;
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 8px;
+        padding: 12px 14px;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0 8px 32px var(--shadow);
+        min-width: 200px;
+      "
+    >
+      <div
+        style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px"
+      >
+        <span
+          style="
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text3);
+            flex: 1;
+          "
+          >Padding</span
+        >
+        <span
+          id="paddingCompName"
+          style="
+            font-size: 10px;
+            color: var(--text2);
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          "
+        ></span>
+        <button
+          onclick="closePaddingEditor()"
+          style="
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text3);
+            font-size: 12px;
+            font-family: inherit;
+            padding: 0 2px;
+          "
+        >
+          ✕
+        </button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span style="font-size: 9px; color: var(--text3); width: 50px"
+          >Top (px)</span
+        >
+        <input
+          type="number"
+          id="paddingTop"
+          min="0"
+          max="200"
+          style="width: 70px; padding: 4px 7px; font-size: 11px"
+          oninput="applyPaddingLive()"
+        />
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span style="font-size: 9px; color: var(--text3); width: 50px"
+          >Bottom (px)</span
+        >
+        <input
+          type="number"
+          id="paddingBottom"
+          min="0"
+          max="200"
+          style="width: 70px; padding: 4px 7px; font-size: 11px"
+          oninput="applyPaddingLive()"
+        />
+      </div>
+      <div style="display: flex; gap: 6px; margin-top: 2px">
+        <button
+          class="btn btn-sm btn-accent"
+          style="flex: 1"
+          onclick="applyPaddingAndClose()"
+        >
+          ✓ Apply
+        </button>
+        <button class="btn btn-sm" onclick="closePaddingEditor()">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ PREVIEW MODAL ═══ -->
+    <div class="preview-modal-overlay" id="previewModal">
+      <div class="preview-modal">
+        <div class="preview-modal-head">
+          <span class="preview-modal-title">👁 Email Preview</span>
+          <div class="preview-modal-tabs">
+            <div class="ptab active" onclick="switchPTab('visual', this)">
+              Visual
+            </div>
+            <div class="ptab" onclick="switchPTab('html', this)">HTML</div>
+          </div>
+          <button
+            class="btn btn-sm"
+            onclick="closePreviewModal()"
+            style="margin-left: 8px"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="preview-modal-body" id="previewModalBody">
+          <iframe id="previewFrame" style="display: block"></iframe>
+          <pre id="htmlOutput" style="display: none"></pre>
+        </div>
+        <div class="preview-modal-foot">
+          <button class="btn btn-sm" onclick="copyHTML()">⎘ Copy HTML</button>
+          <button class="btn btn-sm btn-green" onclick="openZipModal()">
+            ⬇ Download ZIP
+          </button>
+          <button class="btn btn-sm btn-green" onclick="downloadHTML()">
+            ⬇ Download HTML
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ZIP SAVE MODAL ═══ -->
+    <div class="modal-overlay" id="zipModal">
+      <div class="zip-modal">
+        <div class="zip-modal-head">
+          <span class="zip-modal-title">📦 Download ZIP Package</span>
+          <button class="btn btn-sm" onclick="closeZipModal()">✕</button>
+        </div>
+        <div class="zip-modal-body">
+          <div class="zip-field">
+            <div class="field-label">ZIP File Name</div>
+            <div class="zip-field-row">
+              <input
+                type="text"
+                id="zipFilename"
+                value="email-package"
+                maxlength="80"
+                placeholder="email-package"
+              />
+              <span
+                style="font-size: 10px; color: var(--text3); align-self: center"
+                >.zip</span
+              >
+            </div>
+          </div>
+          <div class="zip-field">
+            <div class="field-label">HTML File Name</div>
+            <div class="zip-field-row">
+              <input
+                type="text"
+                id="zipHtmlName"
+                value="email"
+                maxlength="80"
+                placeholder="email"
+              />
+              <span
+                style="font-size: 10px; color: var(--text3); align-self: center"
+                >.html</span
+              >
+            </div>
+          </div>
+          <div class="zip-field">
+            <div class="field-label">Save Location</div>
+            <button
+              class="btn btn-sm btn-accent"
+              onclick="pickZipDirectory()"
+              id="pickDirBtn"
+              style="align-self: flex-start"
+            >
+              📂 Choose Folder…
+            </button>
+            <div class="dir-preview" id="dirPreview">
+              Downloads folder (browser default)
+            </div>
+            <div class="dir-note">
+              Note: Modern browsers support folder selection via the File System
+              Access API. If unavailable, the file saves to your default
+              Downloads folder.
+            </div>
+          </div>
+        </div>
+        <div class="zip-modal-foot">
+          <button class="btn btn-sm" onclick="closeZipModal()">Cancel</button>
+          <button class="btn btn-sm btn-green" onclick="confirmDownloadZip()">
+            ⬇ Download
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ IMAGE MANAGER MODAL ═══ -->
+    <div class="img-modal-overlay" id="imgModal">
+      <div class="img-modal">
+        <div class="img-modal-head">
+          <span class="img-modal-title">🖼 Image Manager</span>
+          <button class="btn btn-sm" onclick="closeImgModal()">✕ Close</button>
+        </div>
+        <div class="img-modal-body">
+          <div class="img-big-drop" id="modalDZ">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onchange="handleFileInput(event)"
+            />
+            <div class="img-big-drop-icon">📂</div>
+            <div style="font-weight: 600; margin-bottom: 3px">
+              Drop images or click to browse
+            </div>
+            <div style="font-size: 10px">PNG · JPG · GIF · SVG · WebP</div>
+          </div>
+          <div>
+            <div class="field-label" style="margin-bottom: 6px">
+              Library
+              <span
+                id="imgModalCount"
+                style="font-weight: 400; color: var(--text3)"
+              ></span>
+            </div>
+            <div class="img-grid" id="imgModalGrid"></div>
+            <div
+              id="imgModalEmpty"
+              style="
+                font-size: 10px;
+                color: var(--text3);
+                padding: 6px 0;
+                display: none;
+              "
+            >
+              No images yet.
+            </div>
+          </div>
+          <div id="imgTagSection" style="display: none">
+            <div class="field-label" style="margin-bottom: 6px">
+              Selected Image
+            </div>
+            <div class="img-tag-box">
+              <div class="img-tag-row">
+                <div class="img-tag-thumb" id="imgTagThumb"></div>
+                <div class="img-tag-info">
+                  <div class="img-path" id="imgTagPath"></div>
+                  <div style="font-size: 9px; color: var(--text3)">
+                    This path will be used in the exported HTML.
+                  </div>
+                </div>
+              </div>
+              <div class="img-tag-input-row">
+                <input
+                  type="text"
+                  id="imgTagHTML"
+                  readonly
+                  onclick="this.select()"
+                  style="font-size: 10px"
+                />
+                <button class="btn btn-sm btn-accent" onclick="copyImgTag()">
+                  ⎘ Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="img-modal-foot">
+          <button class="btn btn-sm" onclick="closeImgModal()">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GENERIC MODAL -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal">
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-btns" id="modalBtns"></div>
+      </div>
+    </div>
+
+    <!-- FILENAME MODAL (JSON save) -->
+    <div class="modal-overlay" id="filenameModal">
+      <div class="filename-modal">
+        <div class="modal-title">💾 Save JSON</div>
+        <div style="font-size: 11px; color: var(--text2); margin-top: 4px">
+          Enter a filename:
+        </div>
+        <input
+          type="text"
+          class="filename-modal-input"
+          id="filenameInput"
+          placeholder="email-builder"
+          maxlength="80"
+        />
+        <div class="modal-btns">
+          <button class="btn btn-sm" onclick="closeFilenameModal()">
+            Cancel
+          </button>
+          <button class="btn btn-sm btn-accent" onclick="confirmSaveJSON()">
+            ⬇ Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hover preview popup -->
+    <div class="comp-preview-popup" id="hoverPopup">
+      <div class="comp-preview-popup-header" id="hoverPopupTitle">Preview</div>
+      <iframe
+        id="hoverPopupFrame"
+        sandbox="allow-same-origin"
+        scrolling="auto"
+      ></iframe>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      /* ════════════════════════════════════════════
+   COOKIE HELPERS
+════════════════════════════════════════════ */
+      const COOKIE_KEY = "eb_v4";
+      function setCookie(k, v, d = 30) {
+        const e = new Date(Date.now() + d * 864e5).toUTCString();
+        document.cookie =
+          k +
+          "=" +
+          encodeURIComponent(v) +
+          "; expires=" +
+          e +
+          "; path=/; SameSite=Lax";
+      }
+      function getCookie(k) {
+        const m = document.cookie.match(
+          "(?:^|; )" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)",
+        );
+        return m ? decodeURIComponent(m[1]) : null;
+      }
+      function deleteCookie(k) {
+        document.cookie =
+          k + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
+      }
+
+      function saveSession() {
+        try {
+          const imgMeta = images.map((im) => ({
+            name: im.name,
+            serverPath: im.serverPath,
+          }));
+          const data = JSON.stringify({
+            v: 4,
+            components,
+            layout,
+            paddings,
+            imgMeta,
+            theme:
+              document.documentElement.getAttribute("data-theme") || "light",
+            previewPanelOpen,
+            canvasZoom,
+          });
+          setCookie(COOKIE_KEY, data);
+        } catch (e) {}
+      }
+      function loadSession() {
+        const raw = getCookie(COOKIE_KEY);
+        if (!raw) return false;
+        try {
+          const d = JSON.parse(raw);
+          if (!Array.isArray(d.components) || !Array.isArray(d.layout))
+            return false;
+          components = d.components;
+          layout = d.layout;
+          if (d.paddings) paddings = d.paddings;
+          if (Array.isArray(d.imgMeta))
+            images = d.imgMeta.map((im) => ({
+              name: im.name,
+              serverPath: im.serverPath,
+              blobUrl: null,
+              blob: null,
+            }));
+          const theme = d.theme === "dark" ? "dark" : "light";
+          document.documentElement.setAttribute("data-theme", theme);
+          syncThemeBtn(theme);
+          if (d.previewPanelOpen !== undefined)
+            previewPanelOpen = d.previewPanelOpen;
+          if (d.canvasZoom) canvasZoom = d.canvasZoom;
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      function showCookieManager() {
+        const raw = getCookie(COOKIE_KEY);
+        let size = "—";
+        if (raw)
+          size =
+            raw.length > 1024
+              ? (raw.length / 1024).toFixed(1) + " KB"
+              : raw.length + " B";
+        const body = raw
+          ? `Session cookie saved (~${size}). Stores components, layout, paddings, image paths, theme. Image previews need re-uploading each session. Expires in 30 days.`
+          : "No session cookie yet.";
+        showModal("🍪 Session Cookie", body, [
+          { label: "Close" },
+          ...(raw
+            ? [
+                {
+                  label: "🗑 Clear",
+                  cls: "btn-red",
+                  action: () => {
+                    deleteCookie(COOKIE_KEY);
+                    $("cookieBadge").classList.remove("on");
+                    toast("Cookie cleared", "ok");
+                  },
+                },
+              ]
+            : []),
+        ]);
+      }
+
+      /* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+      let components = [],
+        layout = [],
+        paddings = {},
+        history = [],
+        future = [],
+        isDirty = false;
+      let images = [],
+        selectedImgIdx = null;
+      let canvasZoom = 1,
+        previewPanelOpen = true;
+      let activePaddingCell = null; // {ri,ci}
+      let zipDirHandle = null;
+      const $ = (id) => document.getElementById(id);
+
+      window.addEventListener("beforeunload", (e) => {
+        if (!isDirty) return;
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes.";
+      });
+      function markDirty() {
+        isDirty = true;
+      }
+      function markClean() {
+        isDirty = false;
+      }
+
+      /* ════════════════════════════════════════════
+   THEME
+════════════════════════════════════════════ */
+      function syncThemeBtn(t) {
+        $("themeToggle").textContent = t === "dark" ? "🌙 Dark" : "☀ Light";
+      }
+      function toggleTheme() {
+        const n =
+          document.documentElement.getAttribute("data-theme") === "dark"
+            ? "light"
+            : "dark";
+        document.documentElement.setAttribute("data-theme", n);
+        syncThemeBtn(n);
+        saveSession();
+      }
+
+      /* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+      let toastT;
+      function toast(msg, type = "") {
+        const t = $("toast");
+        t.textContent = msg;
+        t.className = "toast show " + type;
+        clearTimeout(toastT);
+        toastT = setTimeout(() => (t.className = "toast"), 2400);
+      }
+
+      /* ════════════════════════════════════════════
+   GENERIC MODAL
+════════════════════════════════════════════ */
+      function showModal(title, body, btns) {
+        $("modalTitle").textContent = title;
+        $("modalBody").textContent = body;
+        const bb = $("modalBtns");
+        bb.innerHTML = "";
+        btns.forEach((b) => {
+          const el = document.createElement("button");
+          el.className = "btn " + (b.cls || "");
+          el.textContent = b.label;
+          el.onclick = () => {
+            closeModal();
+            b.action && b.action();
+          };
+          bb.appendChild(el);
+        });
+        $("modal").classList.add("show");
+      }
+      function closeModal() {
+        $("modal").classList.remove("show");
+      }
+      function confirmClear() {
+        showModal("Clear Canvas", "Remove all rows from the canvas?", [
+          { label: "Cancel" },
+          {
+            label: "Clear All",
+            cls: "btn-red",
+            action: () =>
+              doAction(() => {
+                layout = [];
+                paddings = {};
+              }),
+          },
+        ]);
+      }
+
+      /* ════════════════════════════════════════════
+   FLYOUT SIDEBAR
+════════════════════════════════════════════ */
+      let activeFlyout = null;
+      function toggleFlyout(panel) {
+        if (activeFlyout === panel) {
+          closeFlyout();
+          return;
+        }
+        activeFlyout = panel;
+        ["components", "rows", "images", "add"].forEach((p) => {
+          const el = $("panel" + p.charAt(0).toUpperCase() + p.slice(1));
+          if (el)
+            el.style.display =
+              p === panel
+                ? p === "components" || p === "images"
+                  ? "flex"
+                  : "flex"
+                : "none";
+        });
+        // fix display
+        $("panelComponents").style.display =
+          panel === "components" ? "flex" : "none";
+        $("panelRows").style.display = panel === "rows" ? "block" : "none";
+        $("panelImages").style.display = panel === "images" ? "flex" : "none";
+        $("panelAdd").style.display = panel === "add" ? "flex" : "none";
+        const titles = {
+          components: "Component Library",
+          rows: "Layouts",
+          images: "Images",
+          add: "New Component",
+        };
+        $("flyoutTitle").textContent = titles[panel] || panel;
+        $("sidebarFlyout").classList.add("open");
+        // update rail buttons
+        ["Components", "Rows", "Images", "Add"].forEach((p) => {
+          const btn = $("rail" + p);
+          if (btn) btn.classList.toggle("active", p.toLowerCase() === panel);
+        });
+      }
+      function closeFlyout() {
+        activeFlyout = null;
+        $("sidebarFlyout").classList.remove("open");
+        ["Components", "Rows", "Images", "Add"].forEach((p) => {
+          const btn = $("rail" + p);
+          if (btn) btn.classList.remove("active");
+        });
+      }
+      // Close flyout if clicking outside
+      document.addEventListener(
+        "click",
+        (e) => {
+          if (
+            !$("sidebarFlyout").contains(e.target) &&
+            !$("iconRail").contains(e.target)
+          ) {
+            if (activeFlyout) closeFlyout();
+          }
+        },
+        { capture: true, passive: true },
+      );
+
+      /* ════════════════════════════════════════════
+   CANVAS ZOOM
+════════════════════════════════════════════ */
+      function setZoom(z) {
+        canvasZoom = Math.max(0.3, Math.min(2, parseFloat(z.toFixed(1))));
+        $("canvasInner").style.transform = `scale(${canvasZoom})`;
+        $("canvasInner").style.transformOrigin = "top center";
+        // Adjust wrapper height so scrollbar works
+        const inner = $("canvasInner");
+        inner.style.height =
+          canvasZoom !== 1
+            ? Math.ceil(inner.scrollHeight * canvasZoom) + "px"
+            : "";
+        $("zoomLabel").textContent = Math.round(canvasZoom * 100) + "%";
+        saveSession();
+      }
+      // Ctrl+scroll to zoom
+      $("canvasViewport").addEventListener(
+        "wheel",
+        (e) => {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setZoom(canvasZoom - (e.deltaY > 0 ? 0.1 : -0.1));
+          }
+        },
+        { passive: false },
+      );
+
+      /* ════════════════════════════════════════════
+   PREVIEW PANEL
+════════════════════════════════════════════ */
+      let panelTab = "visual";
+      function togglePreviewPanel() {
+        previewPanelOpen = !previewPanelOpen;
+        $("previewPanel").style.display = previewPanelOpen ? "flex" : "none";
+        $("r2").style.display = previewPanelOpen ? "block" : "none";
+        $("previewPanelToggleBtn").classList.toggle(
+          "btn-accent",
+          previewPanelOpen,
+        );
+        if (previewPanelOpen) updatePreviewPanel();
+        saveSession();
+      }
+      function switchPanelTab(name, el) {
+        panelTab = name;
+        document
+          .querySelectorAll(".ppanel-tab")
+          .forEach((t) => t.classList.remove("active"));
+        el.classList.add("active");
+        $("previewPanelFrame").style.display =
+          name === "visual" ? "block" : "none";
+        $("previewPanelCode").style.display =
+          name === "html" ? "block" : "none";
+        updatePreviewPanel();
+      }
+      function updatePreviewPanel() {
+        if (!previewPanelOpen) return;
+        const html = buildEmailHTML(false);
+        const previewHtml = buildEmailHTML(true);
+        $("previewPanelCode").textContent = html;
+        $("previewPanelFrame").srcdoc = previewHtml;
+      }
+
+      /* ════════════════════════════════════════════
+   PADDING EDITOR
+════════════════════════════════════════════ */
+      function paddingKey(ri, ci) {
+        return `${ri}_${ci}`;
+      }
+      function getCellPadding(ri, ci) {
+        const k = paddingKey(ri, ci);
+        return paddings[k] || { top: 0, bottom: 0 };
+      }
+      function setCellPadding(ri, ci, top, bottom) {
+        const k = paddingKey(ri, ci);
+        paddings[k] = {
+          top: parseInt(top) || 0,
+          bottom: parseInt(bottom) || 0,
+        };
+      }
+
+      function openPaddingEditor(ri, ci, cellEl) {
+        activePaddingCell = { ri, ci };
+        const p = getCellPadding(ri, ci);
+        $("paddingTop").value = p.top;
+        $("paddingBottom").value = p.bottom;
+        const compIdx = layout[ri].cells[ci];
+        $("paddingCompName").textContent =
+          compIdx !== null && components[compIdx]
+            ? components[compIdx].name
+            : "";
+        const rect = cellEl.getBoundingClientRect();
+        const ed = $("paddingEditor");
+        ed.style.display = "flex";
+        let left = rect.right + 8,
+          top = rect.top;
+        if (left + 220 > window.innerWidth) left = rect.left - 228;
+        if (top + 160 > window.innerHeight) top = window.innerHeight - 168;
+        ed.style.left = Math.max(8, left) + "px";
+        ed.style.top = Math.max(8, top) + "px";
+      }
+      function closePaddingEditor() {
+        $("paddingEditor").style.display = "none";
+        activePaddingCell = null;
+      }
+      function applyPaddingLive() {
+        if (!activePaddingCell) return;
+        const { ri, ci } = activePaddingCell;
+        const top = parseInt($("paddingTop").value) || 0;
+        const bottom = parseInt($("paddingBottom").value) || 0;
+        // live update the cell iframe wrapper
+        const iframes = document.querySelectorAll(".cell-preview-iframe");
+        // find the right one
+        renderCanvas();
+      }
+      function applyPaddingAndClose() {
+        if (!activePaddingCell) return;
+        const { ri, ci } = activePaddingCell;
+        doAction(() => {
+          const top = parseInt($("paddingTop").value) || 0;
+          const bottom = parseInt($("paddingBottom").value) || 0;
+          setCellPadding(ri, ci, top, bottom);
+        });
+        closePaddingEditor();
+        toast("✓ Padding applied", "ok");
+      }
+      // Close padding editor on outside click
+      document.addEventListener("click", (e) => {
+        if (
+          activePaddingCell &&
+          !$("paddingEditor").contains(e.target) &&
+          !e.target.closest(".cell")
+        ) {
+          closePaddingEditor();
+        }
+      });
+
+      /* ════════════════════════════════════════════
+   FILENAME MODAL
+════════════════════════════════════════════ */
+      function saveJSON() {
+        $("filenameInput").value = "email-builder";
+        $("filenameModal").classList.add("show");
+        setTimeout(() => $("filenameInput").select(), 80);
+      }
+      function closeFilenameModal() {
+        $("filenameModal").classList.remove("show");
+      }
+      function confirmSaveJSON() {
+        let name = ($("filenameInput").value.trim() || "email-builder").replace(
+          /\.json$/i,
+          "",
+        );
+        closeFilenameModal();
+        const imgMeta = images.map((im) => ({
+          name: im.name,
+          serverPath: im.serverPath,
+        }));
+        dl(
+          new Blob(
+            [
+              JSON.stringify(
+                { components, layout, paddings, imgMeta },
+                null,
+                2,
+              ),
+            ],
+            { type: "application/json" },
+          ),
+          name + ".json",
+        );
+        toast("✓ Saved as " + name + ".json", "ok");
+        markClean();
+      }
+      $("filenameModal").addEventListener("click", (e) => {
+        if (e.target === $("filenameModal")) closeFilenameModal();
+      });
+      $("filenameInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") confirmSaveJSON();
+      });
+
+      /* ════════════════════════════════════════════
+   LOAD JSON
+════════════════════════════════════════════ */
+      function loadJSON(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = (ev) => {
+          try {
+            const d = JSON.parse(ev.target.result);
+            if (!Array.isArray(d.components) || !Array.isArray(d.layout))
+              throw 0;
+            doAction(() => {
+              components = d.components;
+              layout = d.layout;
+              if (d.paddings) paddings = d.paddings;
+            });
+            if (Array.isArray(d.imgMeta)) {
+              images = d.imgMeta.map((im) => ({
+                name: im.name,
+                serverPath: im.serverPath,
+                blobUrl: null,
+                blob: null,
+              }));
+              renderImages();
+            }
+            toast("✓ JSON loaded (re-upload images to see previews)", "ok");
+            markClean();
+          } catch {
+            toast("✗ Invalid JSON", "err");
+          }
+          e.target.value = "";
+        };
+        r.readAsText(file);
+      }
+
+      /* ════════════════════════════════════════════
+   ZIP MODAL
+════════════════════════════════════════════ */
+      function openZipModal() {
+        $("zipModal").classList.add("show");
+      }
+      function closeZipModal() {
+        $("zipModal").classList.remove("show");
+      }
+      $("zipModal").addEventListener("click", (e) => {
+        if (e.target === $("zipModal")) closeZipModal();
+      });
+
+      async function pickZipDirectory() {
+        if (!window.showDirectoryPicker) {
+          toast("Directory picker not supported in this browser", "err");
+          return;
+        }
+        try {
+          zipDirHandle = await window.showDirectoryPicker({
+            mode: "readwrite",
+          });
+          $("dirPreview").textContent = "📁 " + zipDirHandle.name;
+          toast("✓ Folder selected: " + zipDirHandle.name, "ok");
+        } catch (e) {
+          if (e.name !== "AbortError") toast("Could not access folder", "err");
+        }
+      }
+
+      async function confirmDownloadZip() {
+        if (typeof JSZip === "undefined") {
+          toast("✗ JSZip not loaded", "err");
+          return;
+        }
+        const zipName = (
+          $("zipFilename").value.trim() || "email-package"
+        ).replace(/\.zip$/i, "");
+        const htmlName = ($("zipHtmlName").value.trim() || "email").replace(
+          /\.html$/i,
+          "",
+        );
+        closeZipModal();
+
+        const zip = new JSZip();
+        zip.file(htmlName + ".html", buildEmailHTML(false));
+        const imgFolder = zip.folder("images");
+        let imgCount = 0;
+        for (const im of images) {
+          if (im.blob) {
+            imgFolder.file(im.name, im.blob);
+            imgCount++;
+          } else if (im.blobUrl) {
+            try {
+              const res = await fetch(im.blobUrl);
+              const blob = await res.blob();
+              imgFolder.file(im.name, blob);
+              imgCount++;
+            } catch (e) {}
+          }
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+
+        // Try File System Access API first
+        if (zipDirHandle) {
+          try {
+            const fh = await zipDirHandle.getFileHandle(zipName + ".zip", {
+              create: true,
+            });
+            const w = await fh.createWritable();
+            await w.write(zipBlob);
+            await w.close();
+            toast(
+              `✓ Saved to ${zipDirHandle.name}/${zipName}.zip (${imgCount} image${imgCount !== 1 ? "s" : ""})`,
+              "ok",
+            );
+            return;
+          } catch (e) {
+            toast("Could not write to folder, falling back to download", "err");
+          }
+        }
+        // Fallback: trigger download
+        dl(zipBlob, zipName + ".zip");
+        toast(
+          `✓ ${zipName}.zip downloaded (${imgCount} image${imgCount !== 1 ? "s" : ""} + ${htmlName}.html)`,
+          "ok",
+        );
+        markClean();
+      }
+
+      /* ════════════════════════════════════════════
+   IMAGE MANAGEMENT
+════════════════════════════════════════════ */
+      function handleFileInput(e) {
+        Array.from(e.target.files || []).forEach(addImageFile);
+        e.target.value = "";
+      }
+      function addImageFile(file) {
+        if (!file.type.startsWith("image/")) return;
+        const existing = images.findIndex((im) => im.name === file.name);
+        if (existing >= 0 && images[existing].blobUrl)
+          URL.revokeObjectURL(images[existing].blobUrl);
+        const blobUrl = URL.createObjectURL(file);
+        const entry = {
+          name: file.name,
+          serverPath: "images/" + file.name,
+          blobUrl,
+          blob: file,
+        };
+        if (existing >= 0) images[existing] = entry;
+        else images.push(entry);
+        renderImages();
+        if ($("imgModal").classList.contains("show")) renderImgModalGrid();
+        saveSession();
+        markDirty();
+        toast("✓ " + file.name + " added", "ok");
+      }
+      function removeImage(idx) {
+        if (images[idx].blobUrl) URL.revokeObjectURL(images[idx].blobUrl);
+        images.splice(idx, 1);
+        if (selectedImgIdx === idx) selectedImgIdx = null;
+        else if (selectedImgIdx !== null && selectedImgIdx > idx)
+          selectedImgIdx--;
+        renderImages();
+        if ($("imgModal").classList.contains("show")) renderImgModalGrid();
+        saveSession();
+      }
+      function injectBlobUrls(html) {
+        return html.replace(/src="images\/([^"]+)"/g, (match, fname) => {
+          const im = images.find((i) => i.name === fname);
+          return im && im.blobUrl ? `src="${im.blobUrl}"` : match;
+        });
+      }
+
+      /* Sidebar strip */
+      function renderImages() {
+        $("imgPanelCount") && ($("imgPanelCount").textContent = images.length);
+        const thumbs = $("imgThumbs");
+        thumbs.innerHTML = "";
+        images.forEach((im, i) => {
+          const d = document.createElement("div");
+          d.className = "img-thumb";
+          d.draggable = true;
+          d.title = im.name + "\n" + im.serverPath;
+          if (im.blobUrl) d.innerHTML = `<img src="${im.blobUrl}" alt="">`;
+          else d.innerHTML = `<div class="img-thumb-no-preview">🖼</div>`;
+          d.innerHTML += `<div class="img-thumb-name">${esc(im.name)}</div>
+    <button class="img-thumb-del" onclick="event.stopPropagation();removeImage(${i})">✕</button>`;
+          d.onclick = () => {
+            selectedImgIdx = i;
+            openImgModal();
+          };
+          d.ondragstart = (e) => {
+            e.dataTransfer.setData("type", "image");
+            e.dataTransfer.setData("imgIdx", i);
+          };
+          thumbs.appendChild(d);
+        });
+      }
+
+      /* Drop on sidebar DZ */
+      const sdz = $("sidebarDZ");
+      sdz.addEventListener("dragover", (e) => {
+        if (e.dataTransfer.types.includes("Files")) {
+          e.preventDefault();
+          sdz.classList.add("drag-over");
+        }
+      });
+      sdz.addEventListener("dragleave", () =>
+        sdz.classList.remove("drag-over"),
+      );
+      sdz.addEventListener("drop", (e) => {
+        e.preventDefault();
+        sdz.classList.remove("drag-over");
+        Array.from(e.dataTransfer.files).forEach(addImageFile);
+      });
+
+      /* ════════════════════════════════════════════
+   IMAGE MANAGER MODAL
+════════════════════════════════════════════ */
+      function openImgModal() {
+        $("imgModal").classList.add("show");
+        renderImgModalGrid();
+        setupModalDZ();
+      }
+      function closeImgModal() {
+        $("imgModal").classList.remove("show");
+      }
+      $("imgModal").addEventListener("click", (e) => {
+        if (e.target === $("imgModal")) closeImgModal();
+      });
+      function renderImgModalGrid() {
+        const grid = $("imgModalGrid"),
+          empty = $("imgModalEmpty");
+        grid.innerHTML = "";
+        $("imgModalCount").textContent = "(" + images.length + ")";
+        empty.style.display = images.length ? "none" : "block";
+        images.forEach((im, i) => {
+          const card = document.createElement("div");
+          card.className =
+            "img-card" + (selectedImgIdx === i ? " selected" : "");
+          card.onclick = () => {
+            selectedImgIdx = i;
+            renderImgModalGrid();
+            renderImgTagSection();
+          };
+          if (im.blobUrl) card.innerHTML = `<img src="${im.blobUrl}" alt="">`;
+          else card.innerHTML = `<div class="img-card-no-img">🖼</div>`;
+          card.innerHTML += `<div class="img-card-name">${esc(im.name)}</div>
+    <button class="img-card-del" onclick="event.stopPropagation();removeImage(${i})">✕</button>`;
+          grid.appendChild(card);
+        });
+        renderImgTagSection();
+      }
+      function renderImgTagSection() {
+        const sec = $("imgTagSection");
+        if (selectedImgIdx === null || !images[selectedImgIdx]) {
+          sec.style.display = "none";
+          return;
+        }
+        sec.style.display = "block";
+        const im = images[selectedImgIdx];
+        const thumb = $("imgTagThumb");
+        thumb.innerHTML = im.blobUrl
+          ? `<img src="${im.blobUrl}" alt="">`
+          : "\ud83d\uddbc";
+        $("imgTagPath").textContent = im.serverPath;
+        $("imgTagHTML").value =
+          `<img src="${im.serverPath}" alt="${im.name}" style="display:block;width:100%;max-width:100%">`;
+      }
+      function copyImgTag() {
+        const v = $("imgTagHTML").value;
+        navigator.clipboard.writeText(v).catch(() => {
+          const ta = Object.assign(document.createElement("textarea"), {
+            value: v,
+            style: "position:fixed;opacity:0",
+          });
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        });
+        toast("✓ <img> tag copied", "ok");
+      }
+      function setupModalDZ() {
+        const dz = $("modalDZ");
+        const clone = dz.cloneNode(true);
+        dz.parentNode.replaceChild(clone, dz);
+        const ndz = document.getElementById("modalDZ");
+        ndz.querySelector("input").onchange = handleFileInput;
+        ndz.addEventListener("dragover", (e) => {
+          if (e.dataTransfer.types.includes("Files")) {
+            e.preventDefault();
+            ndz.classList.add("drag-over");
+          }
+        });
+        ndz.addEventListener("dragleave", () =>
+          ndz.classList.remove("drag-over"),
+        );
+        ndz.addEventListener("drop", (e) => {
+          e.preventDefault();
+          ndz.classList.remove("drag-over");
+          Array.from(e.dataTransfer.files).forEach(addImageFile);
+          renderImgModalGrid();
+        });
+      }
+
+      /* ════════════════════════════════════════════
+   PREVIEW MODAL
+════════════════════════════════════════════ */
+      let currentPTab = "visual";
+      function openPreviewModal() {
+        generateHTML();
+        $("previewModal").classList.add("show");
+        $("previewFrame").style.display =
+          currentPTab === "visual" ? "block" : "none";
+        $("htmlOutput").style.display =
+          currentPTab === "html" ? "block" : "none";
+      }
+      function closePreviewModal() {
+        $("previewModal").classList.remove("show");
+      }
+      $("previewModal").addEventListener("click", (e) => {
+        if (e.target === $("previewModal")) closePreviewModal();
+      });
+      function switchPTab(name, el) {
+        currentPTab = name;
+        document
+          .querySelectorAll(".ptab")
+          .forEach((t) => t.classList.remove("active"));
+        el.classList.add("active");
+        $("previewFrame").style.display = name === "visual" ? "block" : "none";
+        $("htmlOutput").style.display = name === "html" ? "block" : "none";
+        generateHTML();
+      }
+
+      /* ════════════════════════════════════════════
+   UNDO / REDO
+════════════════════════════════════════════ */
+      function snap() {
+        return JSON.stringify({ components, layout, paddings });
+      }
+      function doAction(fn) {
+        history.push(snap());
+        if (history.length > 100) history.shift();
+        future = [];
+        fn();
+        renderAll();
+        updateUR();
+        markDirty();
+        saveSession();
+      }
+      function undo() {
+        if (!history.length) return;
+        future.push(snap());
+        const s = JSON.parse(history.pop());
+        components = s.components;
+        layout = s.layout;
+        if (s.paddings) paddings = s.paddings;
+        renderAll();
+        updateUR();
+        markDirty();
+        saveSession();
+      }
+      function redo() {
+        if (!future.length) return;
+        history.push(snap());
+        const s = JSON.parse(future.pop());
+        components = s.components;
+        layout = s.layout;
+        if (s.paddings) paddings = s.paddings;
+        renderAll();
+        updateUR();
+        markDirty();
+        saveSession();
+      }
+      function updateUR() {
+        $("undoBtn").style.opacity = history.length ? "1" : ".35";
+        $("redoBtn").style.opacity = future.length ? "1" : ".35";
+      }
+      document.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "z") {
+          e.preventDefault();
+          undo();
+        }
+        if (
+          (e.ctrlKey || e.metaKey) &&
+          (e.key === "y" || (e.shiftKey && e.key === "z"))
+        ) {
+          e.preventDefault();
+          redo();
+        }
+        if (e.key === "Escape") {
+          closeFlyout();
+          closePaddingEditor();
+        }
+      });
+
+      /* ════════════════════════════════════════════
+   COMPONENTS
+════════════════════════════════════════════ */
+      function addComponent() {
+        const html = $("componentInput").value.trim(),
+          name = $("compNameInput").value.trim();
+        if (!html) {
+          toast("✗ Paste HTML first", "err");
+          return;
+        }
+        doAction(() => {
+          components.push({
+            name: name || "Component " + (components.length + 1),
+            html,
+          });
+        });
+        $("componentInput").value = "";
+        $("compNameInput").value = "";
+        toast("✓ Component added", "ok");
+      }
+      function deleteComponent(i) {
+        const used = layout.some((r) => r.cells.includes(i));
+        showModal(
+          "Delete Component",
+          (used ? `"${components[i].name}" is used in the canvas. ` : "") +
+            `Delete "${components[i].name}"?`,
+          [
+            { label: "Cancel" },
+            {
+              label: "Delete",
+              cls: "btn-red",
+              action: () =>
+                doAction(() => {
+                  components.splice(i, 1);
+                  layout.forEach((row) => {
+                    row.cells = row.cells.map((c) =>
+                      c === i ? null : c > i ? c - 1 : c,
+                    );
+                  });
+                }),
+            },
+          ],
+        );
+      }
+
+      /* ════════════════════════════════════════════
+   HOVER POPUP
+════════════════════════════════════════════ */
+      const hoverPopup = $("hoverPopup"),
+        hoverFrame = $("hoverPopupFrame");
+      let hoverShowT, hoverHideT;
+      function showHoverPreview(comp, el) {
+        clearTimeout(hoverShowT);
+        clearTimeout(hoverHideT);
+        hoverShowT = setTimeout(() => {
+          $("hoverPopupTitle").textContent = "👁 " + comp.name;
+          hoverFrame.srcdoc = injectBlobUrls(comp.html);
+          const r = el.getBoundingClientRect();
+          let left = r.right + 10,
+            top = r.top;
+          if (left + 344 > window.innerWidth) left = r.left - 354;
+          if (top + 290 > window.innerHeight)
+            top = Math.max(4, window.innerHeight - 294);
+          hoverPopup.style.left = left + "px";
+          hoverPopup.style.top = top + "px";
+          hoverPopup.style.display = "block";
+        }, 250);
+      }
+      function scheduleHide() {
+        clearTimeout(hoverHideT);
+        hoverHideT = setTimeout(() => {
+          hoverPopup.style.display = "none";
+        }, 130);
+      }
+      function cancelHide() {
+        clearTimeout(hoverHideT);
+      }
+      hoverPopup.addEventListener("mouseenter", cancelHide);
+      hoverPopup.addEventListener("mouseleave", scheduleHide);
+
+      /* ════════════════════════════════════════════
+   RENDER COMPONENTS (sidebar)
+════════════════════════════════════════════ */
+      function renderComponents() {
+        const list = $("componentList");
+        list.innerHTML = "";
+        if (!components.length) {
+          list.innerHTML =
+            '<div style="color:var(--text3);font-size:10px;padding:6px 0;text-align:center">No components yet.<br><br><span style="color:var(--accent2);cursor:pointer" onclick="toggleFlyout(\'add\')">+ Add one →</span></div>';
+          return;
+        }
+        const hdr = document.createElement("div");
+        hdr.className = "section-label";
+        hdr.style.padding = "8px 0 4px";
+        hdr.textContent = "Library (" + components.length + ")";
+        list.appendChild(hdr);
+        components.forEach((comp, i) => {
+          const div = document.createElement("div");
+          div.className = "comp-item";
+          div.draggable = true;
+          div.innerHTML = `<span class="comp-index">${i + 1}</span><span class="comp-name">${esc(comp.name)}</span><button class="comp-del" onclick="event.stopPropagation();deleteComponent(${i})">✕</button>`;
+          div.ondragstart = (e) => {
+            e.dataTransfer.setData("type", "component");
+            e.dataTransfer.setData("compIndex", i);
+            scheduleHide();
+          };
+          div.addEventListener("mouseenter", () => showHoverPreview(comp, div));
+          div.addEventListener("mouseleave", () => {
+            clearTimeout(hoverShowT);
+            scheduleHide();
+          });
+          list.appendChild(div);
+        });
+      }
+
+      /* ════════════════════════════════════════════
+   ROWS
+════════════════════════════════════════════ */
+      function addRow(type) {
+        layout.push({ type, cells: type === "single" ? [null] : [null, null] });
+      }
+      function moveRow(i, d) {
+        const t = i + d;
+        if (t < 0 || t >= layout.length) return;
+        [layout[i], layout[t]] = [layout[t], layout[i]];
+      }
+
+      /* ════════════════════════════════════════════
+   RENDER CANVAS (600px wide cells)
+════════════════════════════════════════════ */
+      function renderCanvas() {
+        const canvas = $("canvas");
+        canvas.innerHTML = "";
+        $("rowCount").textContent = layout.length
+          ? layout.length + (layout.length > 1 ? " rows" : " row")
+          : "";
+        if (!layout.length) {
+          canvas.innerHTML = `<div class="empty-state"><div class="empty-icon">⬛</div><div>Add a layout from the sidebar · Drop components into cells</div></div>`;
+          generateHTML();
+          return;
+        }
+        layout.forEach((row, ri) => {
+          const rw = document.createElement("div");
+          rw.className = "row-wrap";
+          rw.draggable = true;
+          rw.ondragstart = (e) => {
+            if (e.target.closest(".cell")) {
+              e.stopPropagation();
+              return;
+            }
+            e.dataTransfer.setData("type", "row");
+            e.dataTransfer.setData("rowIndex", ri);
+            setTimeout(() => rw.classList.add("row-dragging"), 10);
+          };
+          rw.ondragend = () => rw.classList.remove("row-dragging");
+          rw.ondragover = (e) => {
+            e.preventDefault();
+            rw.classList.add("drag-over-row");
+          };
+          rw.ondragleave = (e) => {
+            if (!rw.contains(e.relatedTarget))
+              rw.classList.remove("drag-over-row");
+          };
+          rw.ondrop = (e) => {
+            e.preventDefault();
+            rw.classList.remove("drag-over-row");
+            if (e.dataTransfer.getData("type") === "row") {
+              const from = parseInt(e.dataTransfer.getData("rowIndex"));
+              if (from !== ri)
+                doAction(() => {
+                  const m = layout.splice(from, 1)[0];
+                  layout.splice(ri, 0, m);
+                });
+            }
+          };
+
+          const head = document.createElement("div");
+          head.className = "row-head";
+          head.innerHTML = `<span class="drag-handle">⠿</span><span class="row-tag">Row ${ri + 1} · ${row.type}</span>
+    <button class="btn btn-sm" onclick="doAction(()=>moveRow(${ri},-1))"${ri === 0 ? " disabled" : ""}>↑</button>
+    <button class="btn btn-sm" onclick="doAction(()=>moveRow(${ri},1))"${ri === layout.length - 1 ? " disabled" : ""}>↓</button>
+    <button class="btn btn-sm btn-red" onclick="doAction(()=>{layout.splice(${ri},1);const k=Object.fromEntries(Object.entries(paddings).filter(([k])=>!k.startsWith('${ri}_')));paddings=k;})">✕</button>`;
+          rw.appendChild(head);
+
+          const cellsDiv = document.createElement("div");
+          cellsDiv.className = "row-cells";
+          row.cells.forEach((cell, ci) => {
+            const cd = document.createElement("div");
+            cd.className = "cell";
+            const p = getCellPadding(ri, ci);
+
+            cd.ondragover = (e) => {
+              e.preventDefault();
+              cd.classList.add("drop-hover");
+            };
+            cd.ondragleave = (e) => {
+              if (!cd.contains(e.relatedTarget))
+                cd.classList.remove("drop-hover");
+            };
+            cd.ondrop = (e) => {
+              e.preventDefault();
+              cd.classList.remove("drop-hover");
+              const type = e.dataTransfer.getData("type");
+              if (type === "component") {
+                doAction(() => {
+                  layout[ri].cells[ci] = parseInt(
+                    e.dataTransfer.getData("compIndex"),
+                  );
+                });
+              } else if (type === "moveComponent") {
+                const fr = parseInt(e.dataTransfer.getData("fromRow")),
+                  fc = parseInt(e.dataTransfer.getData("fromCell")),
+                  cx = parseInt(e.dataTransfer.getData("compIndex"));
+                doAction(() => {
+                  layout[ri].cells[ci] = cx;
+                  layout[fr].cells[fc] = null;
+                });
+              } else if (type === "image") {
+                const im = images[parseInt(e.dataTransfer.getData("imgIdx"))];
+                if (im)
+                  doAction(() => {
+                    components.push({
+                      name: "Img: " + im.name,
+                      html: `<img src="${im.serverPath}" alt="${im.name}" style="display:block;width:100%;max-width:100%">`,
+                    });
+                    layout[ri].cells[ci] = components.length - 1;
+                  });
+              }
+            };
+
+            if (cell !== null && components[cell]) {
+              const c = components[cell];
+              cd.classList.add("cell-filled");
+              cd.draggable = true;
+              cd.ondragstart = (e) => {
+                e.dataTransfer.setData("type", "moveComponent");
+                e.dataTransfer.setData("fromRow", ri);
+                e.dataTransfer.setData("fromCell", ci);
+                e.dataTransfer.setData("compIndex", cell);
+              };
+
+              const wrap = document.createElement("div");
+              wrap.className = "cell-preview-wrap";
+              // Apply padding wrapper
+              if (p.top > 0 || p.bottom > 0) {
+                wrap.style.paddingTop = p.top + "px";
+                wrap.style.paddingBottom = p.bottom + "px";
+                wrap.style.background =
+                  "repeating-linear-gradient(45deg,var(--accent-bg) 0,var(--accent-bg) 2px,transparent 2px,transparent 8px)";
+              }
+              const iframe = document.createElement("iframe");
+              iframe.className = "cell-preview-iframe";
+              iframe.sandbox = "allow-same-origin allow-scripts";
+              const previewHtml = injectBlobUrls(c.html);
+              iframe.srcdoc = `<!DOCTYPE html><html><head><style>*{box-sizing:border-box;margin:0;}body{margin:0;padding:0;}</style></head><body>${previewHtml}</body></html>`;
+              iframe.onload = () => {
+                try {
+                  const h = iframe.contentDocument.body.scrollHeight;
+                  if (h > 40) iframe.style.height = Math.min(h, 400) + "px";
+                } catch (e) {}
+              };
+
+              const overlay = document.createElement("div");
+              overlay.className = "cell-preview-overlay";
+              overlay.innerHTML = `<span class="cell-comp-name">📄 ${esc(c.name)}</span>
+        <div style="display:flex;gap:4px;pointer-events:all;">
+          <button class="btn btn-sm" style="font-size:9px;padding:2px 6px;background:#ffffffcc;color:#222;border-color:#ccc;"
+            onclick="event.stopPropagation();openPaddingEditor(${ri},${ci},this.closest('.cell'))">↕ Padding${p.top || p.bottom ? " (" + p.top + "/" + p.bottom + ")" : ""}</button>
+          <button class="btn btn-sm btn-red" style="font-size:9px;padding:2px 5px;"
+            onclick="event.stopPropagation();doAction(()=>{layout[${ri}].cells[${ci}]=null;const k=paddingKey(${ri},${ci});delete paddings[k];})">✕</button>
+        </div>`;
+              wrap.appendChild(iframe);
+              wrap.appendChild(overlay);
+              cd.appendChild(wrap);
+            } else {
+              cd.innerHTML = '<span class="cell-drop-hint">Drop here</span>';
+            }
+            cellsDiv.appendChild(cd);
+          });
+          rw.appendChild(cellsDiv);
+          canvas.appendChild(rw);
+        });
+        generateHTML();
+      }
+
+      /* ════════════════════════════════════════════
+   HTML GENERATION — 600px wide
+════════════════════════════════════════════ */
+      function buildEmailHTML(useBlobUrls) {
+        let body = "";
+        layout.forEach((row, ri) => {
+          body += "  <tr>\n";
+          row.cells.forEach((cell, ci) => {
+            const p = getCellPadding(ri, ci);
+            const padStyle = `padding-top:${p.top}px;padding-bottom:${p.bottom}px;`;
+            body += `    <td valign="top" style="${padStyle}">\n`;
+            if (cell !== null && components[cell]) {
+              const html = useBlobUrls
+                ? injectBlobUrls(components[cell].html)
+                : components[cell].html;
+              body += "      " + html + "\n";
+            }
+            body += "    </td>\n";
+          });
+          body += "  </tr>\n";
+        });
+        return `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0">
+<meta name="x-apple-disable-message-reformatting" content="">
+<style type="text/css">
+*{box-sizing:border-box;-webkit-text-size-adjust:none;}
+body{margin:0;padding:0;}
+table{mso-table-lspace:0pt;mso-table-rspace:0pt;}
+img{-ms-interpolation-mode:bicubic;}
+@media only screen and (max-width:480px){
+  .mobileWidth{width:100%!important;max-width:360px!important;}
+  .responsiveImage{width:100%!important;}
+  .paddingMobile{padding-left:20px!important;padding-right:20px!important;}
+  .only-desktop{display:none!important;visibility:hidden!important;}
+  .only-mobile{display:block!important;visibility:visible!important;}
+  .stack{display:block!important;width:100%!important;}
+}
+</style>
+<!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+</head>
+<body>
+<!--[if mso]><table cellspacing="0" cellpadding="0" align="center" style="margin:auto;"><tr><td width="600"><![endif]-->
+<table align="center" class="mobileWidth" cellspacing="0" cellpadding="0" width="600" style="width:600px;max-width:600px;border-collapse:collapse;background-color:#ffffff;margin:auto;">
+  <tr><td>
+<table width="100%" cellpadding="0" cellspacing="0">
+${body}</table>
+  </td></tr>
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</body>
+</html>`;
+      }
+
+      function generateHTML() {
+        const exportHtml = buildEmailHTML(false);
+        const previewHtml = buildEmailHTML(true);
+        $("htmlOutput").textContent = exportHtml;
+        $("previewFrame").srcdoc = previewHtml;
+        updatePreviewPanel();
+        return exportHtml;
+      }
+      function getHTML() {
+        return $("htmlOutput").textContent || buildEmailHTML(false);
+      }
+
+      /* ════════════════════════════════════════════
+   COPY / DOWNLOAD
+════════════════════════════════════════════ */
+      async function copyHTML() {
+        const html = getHTML();
+        try {
+          await navigator.clipboard.writeText(html);
+          toast("✓ HTML copied", "ok");
+        } catch {
+          const ta = Object.assign(document.createElement("textarea"), {
+            value: html,
+            style: "position:fixed;opacity:0",
+          });
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          toast("✓ HTML copied", "ok");
+        }
+      }
+      function downloadHTML() {
+        dl(new Blob([getHTML()], { type: "text/html" }), "email.html");
+        toast("✓ email.html downloaded", "ok");
+      }
+
+      /* ════════════════════════════════════════════
+   OUTLOOK
+════════════════════════════════════════════ */
+      function openOutlookModal() {
+        const html = getHTML(),
+          subject = "Email from Builder";
+        const eml = [
+          "From: <builder@example.com>",
+          "To: ",
+          "Subject: " + subject,
+          "MIME-Version: 1.0",
+          "Content-Type: text/html; charset=UTF-8",
+          "Content-Transfer-Encoding: quoted-printable",
+          "",
+          html,
+        ].join("\r\n");
+        showModal(
+          "✉ Open in Outlook",
+          "Download a .eml file and open it with Outlook, or open your default mail client.",
+          [
+            { label: "Cancel" },
+            {
+              label: "✉ mailto:",
+              cls: "btn-purple",
+              action: () => {
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=View+HTML+version`;
+                toast("✓ Opening mail client...", "ok");
+              },
+            },
+            {
+              label: "⬇ .eml",
+              cls: "btn-green",
+              action: () => {
+                dl(new Blob([eml], { type: "message/rfc822" }), "email.eml");
+                toast("✓ email.eml downloaded", "ok");
+              },
+            },
+          ],
+        );
+      }
+
+      /* ════════════════════════════════════════════
+   RESIZER (preview panel)
+════════════════════════════════════════════ */
+      function makeResizer(rid, leftEl, rightEl) {
+        const rz = $(rid);
+        rz.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          const startX = e.clientX,
+            startR = rightEl.getBoundingClientRect().width;
+          const minR = parseInt(getComputedStyle(rightEl).minWidth) || 200;
+          rz.classList.add("active");
+          const cover = document.createElement("div");
+          Object.assign(cover.style, {
+            position: "fixed",
+            inset: "0",
+            zIndex: "99999",
+            cursor: "col-resize",
+            userSelect: "none",
+          });
+          document.body.appendChild(cover);
+          const onMove = (e) => {
+            const dx = e.clientX - startX;
+            rightEl.style.flex = "0 0 " + Math.max(minR, startR - dx) + "px";
+          };
+          const onUp = () => {
+            rz.classList.remove("active");
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+            cover.remove();
+            saveSession();
+          };
+          document.addEventListener("mousemove", onMove);
+          document.addEventListener("mouseup", onUp);
+        });
+      }
+      makeResizer("r2", $("canvasCol"), $("previewPanel"));
+
+      /* ════════════════════════════════════════════
+   UTILS
+════════════════════════════════════════════ */
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+      function dl(blob, name) {
+        const a = Object.assign(document.createElement("a"), {
+          href: URL.createObjectURL(blob),
+          download: name,
+        });
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      /* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+      function renderAll() {
+        renderComponents();
+        renderCanvas();
+      }
+
+      const restored = loadSession();
+      if (restored) {
+        $("cookieBadge").classList.add("on");
+        setTimeout(() => $("cookieBadge").classList.remove("on"), 3500);
+      }
+      syncThemeBtn(
+        document.documentElement.getAttribute("data-theme") || "light",
+      );
+
+      // Apply preview panel state
+      $("previewPanel").style.display = previewPanelOpen ? "flex" : "none";
+      $("r2").style.display = previewPanelOpen ? "block" : "none";
+      $("previewPanelToggleBtn").classList.toggle(
+        "btn-accent",
+        previewPanelOpen,
+      );
+
+      // Apply saved zoom
+      if (canvasZoom !== 1) setZoom(canvasZoom);
+
+      renderImages();
+      renderAll();
+      updateUR();
+    </script>
+  </body>
+</html>
