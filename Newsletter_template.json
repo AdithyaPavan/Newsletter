@@ -1,0 +1,126 @@
+{
+  "components": [
+    {
+      "name": "Pre-header",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 16px; color: #000000; padding: 20px 30px;\" class=\"paddingMobile\">\n      <span class=\"pink\">[</span>Preheader line<span class=\"pink\">]</span>\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "Header Image",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td valign=\"middle\">\n      <img width=\"600\" src=\"images/header.png\" style=\"display: block; width: 600px;\" alt=\"\" class=\"responsiveImage\"/>\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "Salutation",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #000000; padding: 20px 30px 10px;\" class=\"paddingMobile\">\n      Dear <span class=\"pink\">{{accFname}}</span>,\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "Intro",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #000000; padding: 0 30px 30px;\" class=\"paddingMobile\">\n      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "BODY CONTENT PLACEHOLDER",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td align=\"center\" style=\"padding: 147px 30px; font-family: Arial, Helvetica, sans-serif; font-size: 20px; line-height: 30px; background-color: #E7FCFF; text-transform: uppercase; font-weight: bold;\" class=\"paddingMobile\">\n      Body content placeholder\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "Spacer",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"padding-bottom: 30px; font-size: 1px; line-height: 1px;\">\n      &nbsp;\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "CTA",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td align=\"center\" style=\"font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; padding: 12px 30px; color: #FFFFFF; background-color: #009966;\" class=\"paddingMobile\">\n      <a href=\"\" style=\"text-decoration: none; color: #FFFFFF; display: block;\" target=\"_blank\">CTA&nbsp;&zwj;&nbsp;&zwj;&nbsp;&zwj;&nbsp;&zwj;&nbsp;&zwj;&nbsp;&zwj;></a>\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "Sign-off",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 20px; color: #000000; padding: 20px 30px 0;\" class=\"paddingMobile\">\n      Please feel free to reach out if you have any questions.<br>\n      <span class=\"pink\">{{customText[Sincerely,]}}</span>\n    </td>\n  </tr>\n<tr>\n    <td style=\"padding: 10px 30px 30px;\" class=\"paddingMobile\">\n      <table cellspacing=\"0\" cellpadding=\"0\">\n        <tr>\n          <td class=\"photo-wrapper2\" width=\"70\" height=\"70\" align=\"left\" valign=\"middle\" style=\"width: 70px; height: 70px; overflow: hidden; vertical-align: middle; text-align: center;\">\n            <span class=\"pink\">{{userPhoto}}</span>\n          </td>\n          <td valign=\"center\" style=\"font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 24px; color: #796E65; padding-left: 25px;\">\n            <span class=\"pink\">\n              {{userName}}<br>\n              <a style=\"text-decoration: none; color: #796E65;\" class=\"pink\" href=\"mailto:{{userEmailAddress}}\">{{userEmailAddress}}</a><br>\n              <a href=\"tel:{{User.Phone}}\" style=\"text-decoration: none; color: #796E65;\" class=\"pink\">{{User.Phone}}</a>\n            </span>,\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "Footnotes",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"padding: 0 30px 16px;\" class=\"paddingMobile\">\n      <table cellspacing=\"0\" cellpadding=\"0\">\n        <tr>\n          <td valign=\"center\" style=\"font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 18px; color: #000000;\">\n            &zwnj;<span style=\"font-size: 65%; font-weight: normal; line-height: 0; vertical-align: 6px;\">a</span>\n          </td>\n          <td valign=\"center\" style=\"font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 18px; color: #000000;\">\n            Insert Footnotes\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "References",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 18px; color: #000000; padding: 0 30px 30px;\" class=\"paddingMobile\">\n      <b>References:</b>&nbsp;1.&nbsp;Insert References\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "Indication",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 18px; line-height: 22px; color: #009B77; padding: 30px 30px 5px; font-weight: bold;\" class=\"paddingMobile\">\n      INDICATION\n    </td>\n  </tr>\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 18px; color: #000000; padding: 0 30px 20px;\" class=\"paddingMobile\">\n      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n    </td>\n  </tr>\n</table>"
+    },
+    {
+      "name": "Footer",
+      "html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n  <tr>\n    <td style=\"padding: 0 30px 20px;\" class=\"paddingMobile\">\n      <img src=\"images/sanofi_reg_logo.png\" alt=\"\" width=\"310\" style=\"display: block; width: 310px;\">\n    </td>\n  </tr>\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 16px; color: #000000; padding: 0 30px 20px;\" class=\"paddingMobile\">\n      &copy; 2025 Sanofi and Regeneron Pharmaceuticals, Inc.<br>All Rights Reserved\n    </td>\n  </tr>\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 16px; color: #000000; padding: 0 30px 20px;\" class=\"paddingMobile\">\n      MAT-GLB-xxxxxxx-x-xx/xxxx\n    </td>\n  </tr>\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 16px; color: #000000; padding: 0 30px 20px;\" class=\"paddingMobile\">\n      To be removed from our mailing list, click <a href=\"\" target=\"_blank\" style=\"text-decoration: underline; color: #000000;\">here</a>.\n    </td>\n  </tr>\n  <tr>\n    <td style=\"font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 16px; color: #796E65; padding: 0 30px 20px;\" class=\"paddingMobile\">\n      <span class=\"pink\">[</span>AI-assisted content<span class=\"pink\">]</span>\n    </td>\n  </tr>\n  <tr>\n    <td style=\"padding: 0 30px;\" class=\"paddingMobile\">\n      <img src=\"images/dupixent_logo.png\" alt=\"\" width=\"248\" style=\"display: block; width: 248px;\"/>\n    </td>\n  </tr>\n</table>"
+    }
+  ],
+  "layout": [
+    {
+      "type": "single",
+      "cells": [
+        0
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        1
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        2
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        3
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        4
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        5
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        6
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        7
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        8
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        9
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        10
+      ]
+    },
+    {
+      "type": "single",
+      "cells": [
+        11
+      ]
+    }
+  ]
+}
